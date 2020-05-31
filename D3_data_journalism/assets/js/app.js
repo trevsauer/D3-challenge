@@ -24,8 +24,7 @@ var height = svgHeight - margin.top - margin.bottom;
 
 // create a wrapper for the SVG, and append an SVG group that will hold the chart 
 // & shift the svg group by the left and top margins 
-var svg = d3 
-    .select(".chart")
+var svg = d3.select("#scatter")
     .append("svg")
     .attr("width", svgWidth)
     .attr("height", svgHeight);  
@@ -34,10 +33,17 @@ var svg = d3
 d3.csv("./assets/data/data.csv").then(function(demographicsData){
 
     // parse data
-    demographicsData.forEach(function(data){
+    demographicsData.forEach(function(data) {
         data.healthcare = +data.healthcare;
         data.poverty =+data.poverty;
     });
+
+    var chartGroup = svg.selectAll("g myCircleText")
+        .data(demographicsData);
+
+    var chartEnter = chartGroup.enter()
+        .append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
     // create scale functions
     // create x axis scale to represent poverty data
@@ -50,20 +56,44 @@ d3.csv("./assets/data/data.csv").then(function(demographicsData){
         .domain([0, d3.max(demographicsData, d => d.healthcare)])
         .range([height,0]);
 
-    // create x(bottom) and y(left) axis functions ... stupid naming functionality
+    // create x(bottom) and y(left) axis functions 
     var xAxis = d3.axisBottom(xLinearScale);
     var yAxis = d3.axisLeft(yLinearScale);
 
+    // set the x to the bottom of chart
+    chartEnter.append("g")
+        .attr("transform", `translate(0, ${height})`)
+        .call(xAxis);
 
-
+    // set the y to the left of the chart 
+    chartEnter.append("g")
+        .call(yAxis);
     
+
+    var circles = chartEnter.append("circle")
+    .attr("cx", d => xLinearScale(d.poverty))
+    .attr("cy", d => yLinearScale(d.healthcare))
+    .attr("r", "15")
+    .attr("class", "stateCircle");
+        
+    var text = chartEnter.append("text")
+    .text(d => d.abbr)
+    .attr("dx", d => xLinearScale(d.poverty))
+    .attr("dy", d => (yLinearScale(d.healthcare)) + 5)
+    .attr("class", "stateText");
+
+    // create the labels for the axes 
+    chartEnter.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - margin.left -5)
+    .attr("x", 0 - (height / 2))
+    .attr("dy", "1em")
+    .attr("class", "aText")
+    .text("Lacks Healthcare (%)");
     
+    chartEnter.append("text")
+    .attr("transform", `translate(${width / 2}, ${height + margin.top + 0})`)
+    .attr("class", "aText")
+    .text("In Poverty (%)");
 
-    
-
-
-
-})
-
-
-
+});
